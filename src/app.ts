@@ -37,6 +37,19 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
 
+app.use((req, res, next) => {
+  const origin = req.headers.origin as string | undefined;
+  if (req.method === 'OPTIONS' && origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    return res.status(204).end();
+  }
+  next();
+});
+
 app.use(helmet());
 app.use(cors(corsOptions));
 app.use(generalLimiter);
@@ -97,6 +110,11 @@ app.use(mongoSanitize());
 app.use('/api', routes);
 
 app.use((_req, res) => {
+  const origin = _req.headers.origin as string | undefined;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
   res.status(404).json({
     success: false,
     message: 'Route not found',

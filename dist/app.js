@@ -36,6 +36,18 @@ const corsOptions = {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (req.method === 'OPTIONS' && origin && allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        res.setHeader('Access-Control-Max-Age', '86400');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        return res.status(204).end();
+    }
+    next();
+});
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)(corsOptions));
 app.use(rateLimiter_js_1.generalLimiter);
@@ -90,6 +102,11 @@ app.use((0, cookie_parser_1.default)());
 app.use((0, express_mongo_sanitize_1.default)());
 app.use('/api', index_js_2.default);
 app.use((_req, res) => {
+    const origin = _req.headers.origin;
+    if (origin && allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
     res.status(404).json({
         success: false,
         message: 'Route not found',

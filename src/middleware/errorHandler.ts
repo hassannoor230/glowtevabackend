@@ -11,6 +11,15 @@ interface HttpError extends Error {
   keyPattern?: Record<string, number>;
 }
 
+const allowedOrigins = [...new Set([...config.corsOrigins])];
+
+const setCorsErrorHeaders = (res: Response, origin: string | undefined) => {
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+};
+
 const sanitizeLogValue = (value: string) =>
   value.replace(/mongodb(?:\+srv)?:\/\/[^\s)]+/gi, 'mongodb://[redacted]');
 
@@ -40,6 +49,12 @@ export const errorHandler = (err: HttpError, req: Request, res: Response, next: 
       : 500;
   const isProduction = config.nodeEnv === 'production';
   const safeMessage = err.message ? sanitizeLogValue(err.message) : 'Internal server error';
+  const origin = req.headers.origin as string | undefined;
+
+  const send = (statusCode: number, data: unknown) => {
+    setCorsErrorHeaders(res, origin);
+    res.status(statusCode).json(data);
+  };
 
   if (err instanceof DatabaseConnectionError || isDatabaseAvailabilityError(err)) {
     console.error('Database request failed:', {
@@ -47,11 +62,11 @@ export const errorHandler = (err: HttpError, req: Request, res: Response, next: 
       message: safeMessage,
       path: req.originalUrl,
     });
-    return res.status(503).json({ success: false, message: 'Database connection error' });
+    return send(503, { success: false, message: 'Database connection error' });
   }
 
   if (err instanceof ZodError) {
-    return res.status(400).json({
+    return send(400, {
       success: false,
       message: 'Validation failed',
       errors: err.errors.reduce((acc: Record<string, string>, item) => {
@@ -62,7 +77,7 @@ export const errorHandler = (err: HttpError, req: Request, res: Response, next: 
   }
 
   if (err.name === 'ValidationError') {
-    return res.status(400).json({
+    return send(400, {
       success: false,
       message: 'Validation failed',
       errors: Object.keys(err.errors || {}).reduce((acc: Record<string, string>, key) => {
@@ -74,15 +89,15 @@ export const errorHandler = (err: HttpError, req: Request, res: Response, next: 
 
   if (err.code === 11000) {
     const field = Object.keys(err.keyPattern || {})[0] || 'field';
-    return res.status(409).json({ success: false, message: `${field} already exists` });
+    return send(409, { success: false, message: `${field} already exists` });
   }
 
   if (err.name === 'CastError') {
-    return res.status(400).json({ success: false, message: 'Invalid ID format' });
+    return send(400, { success: false, message: 'Invalid ID format' });
   }
 
   if (err instanceof SyntaxError && (err as any).status === 400 && 'body' in err) {
-    return res.status(400).json({ success: false, message: 'Invalid JSON body' });
+    return send(400, { success: false, message: 'Invalid JSON body' });
   }
 
   if (status >= 500) {
@@ -92,7 +107,7 @@ export const errorHandler = (err: HttpError, req: Request, res: Response, next: 
     });
   }
 
-  return res.status(status).json({
+  return send(status, {
     success: false,
     message: status === 500 && isProduction ? 'Internal server error' : safeMessage,
   });

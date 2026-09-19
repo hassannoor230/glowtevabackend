@@ -1,3 +1,3 @@
-declare const server: import("http").Server<typeof import("http").IncomingMessage, typeof import("http").ServerResponse>;
-export default server;
+import app from './app.js';
+export default app;
 //# sourceMappingURL=server.d.ts.map
