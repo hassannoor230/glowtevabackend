@@ -5,8 +5,9 @@ const getEnv = (name: string, fallback = ''): string =>
   (process.env[name] ?? fallback).trim();
 
 const detectedNodeEnv = (process.env.NODE_ENV || (process.env.VERCEL ? 'production' : 'development')).toLowerCase();
+const isOnVercel = !!process.env.VERCEL;
 const productionClientUrls = ['https://glowteva.vercel.app', 'https://glowteva.com'];
-const defaultClientUrl = detectedNodeEnv === 'production' ? productionClientUrls[0] : 'http://localhost:3000';
+const defaultClientUrl = isOnVercel ? productionClientUrls[0] : (detectedNodeEnv === 'production' ? productionClientUrls[0] : 'http://localhost:3000');
 const configuredClientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || defaultClientUrl;
 const isLocalOrigin = (origin: string) =>
   /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?\/?$/i.test(origin);
@@ -18,9 +19,11 @@ const explicitCorsOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
   .map((value) => value.trim())
   .filter(Boolean);
-const corsOrigins = detectedNodeEnv === 'production'
+const baseOrigins = isOnVercel
   ? [...productionClientUrls, ...frontendOrigins.filter((origin) => !isLocalOrigin(origin)), ...explicitCorsOrigins]
-  : [...frontendOrigins, ...explicitCorsOrigins, 'http://localhost:3000', 'http://127.0.0.1:3000'];
+  : detectedNodeEnv === 'production'
+    ? [...productionClientUrls, ...frontendOrigins.filter((origin) => !isLocalOrigin(origin)), ...explicitCorsOrigins]
+    : [...frontendOrigins, ...explicitCorsOrigins, 'http://localhost:3000', 'http://127.0.0.1:3000'];
 
 export const config = {
   port: Number.parseInt(getEnv('PORT', '5000'), 10),
@@ -46,9 +49,9 @@ export const config = {
     from: getEnv('SMTP_FROM', 'noreply@glowteva.com'),
   },
   clientUrl: configuredClientUrl.trim(),
-  corsOrigins: [...new Set([...corsOrigins, configuredClientUrl.trim(), defaultClientUrl])].filter(
+  corsOrigins: [...new Set([...baseOrigins, configuredClientUrl.trim(), defaultClientUrl])].filter(
     (origin) => origin && origin !== '*' && (
-      detectedNodeEnv !== 'production' ||
+      !isOnVercel ||
       !isLocalOrigin(origin)
     )
   ),

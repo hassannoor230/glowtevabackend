@@ -30,9 +30,22 @@ const corsOptions = {
   optionsSuccessStatus: 204,
 };
 
+const setCorsHeaders = (res: express.Response, origin?: string) => {
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+};
+
 app.use(helmet());
 app.use(cors(corsOptions));
 app.use(generalLimiter);
+
+app.use((_req, res, next) => {
+  setCorsHeaders(res, _req.headers.origin as string | undefined);
+  if (res.headersSent) return next();
+  next();
+});
 
 app.get('/', (_req, res) => {
   res.json({
@@ -90,6 +103,7 @@ app.use(mongoSanitize());
 app.use('/api', routes);
 
 app.use((_req, res) => {
+  setCorsHeaders(res, _req.headers.origin as string | undefined);
   res.status(404).json({
     success: false,
     message: 'Route not found',
