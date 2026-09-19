@@ -23,11 +23,11 @@ export declare const productSchema: z.ZodObject<{
         name: z.ZodString;
         values: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
-        name: string;
         values: string[];
+        name: string;
     }, {
-        name: string;
         values: string[];
+        name: string;
     }>, "many">>;
     variants: z.ZodOptional<z.ZodArray<z.ZodObject<{
         _id: z.ZodOptional<z.ZodString>;
@@ -81,8 +81,8 @@ export declare const productSchema: z.ZodObject<{
     productType: string;
     thumbnail: string;
     options?: {
-        name: string;
         values: string[];
+        name: string;
     }[] | undefined;
     status?: "active" | "draft" | "archived" | undefined;
     compareAtPrice?: number | undefined;
@@ -120,8 +120,8 @@ export declare const productSchema: z.ZodObject<{
     productType: string;
     thumbnail: string;
     options?: {
-        name: string;
         values: string[];
+        name: string;
     }[] | undefined;
     status?: "active" | "draft" | "archived" | undefined;
     compareAtPrice?: number | undefined;

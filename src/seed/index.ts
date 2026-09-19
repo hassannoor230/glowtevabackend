@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
 import { config } from '../config/index.js';
+import { connectDatabase, disconnectDatabase } from '../db.js';
 import { User } from '../models/User.js';
 import { Product } from '../models/Product.js';
 import { Category } from '../models/Category.js';
@@ -289,7 +289,7 @@ We do not claim perfection. We claim intention—and the ongoing work of improvi
 
 const seed = async () => {
   try {
-    await mongoose.connect(config.mongodbUri);
+    await connectDatabase();
     console.log('Connected to MongoDB');
 
     if (resetSeed) {
@@ -421,9 +421,11 @@ const seed = async () => {
     console.log('\n✓ Seed completed successfully');
     console.log(`  Admin: ${config.adminEmail}`);
     console.log(`  Demo user: elena@example.com / DemoUser123!`);
+    await disconnectDatabase();
     process.exit(0);
   } catch (err) {
     console.error('Seed failed:', err);
+    await disconnectDatabase();
     process.exit(1);
   }
 };

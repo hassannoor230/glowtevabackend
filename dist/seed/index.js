@@ -1,10 +1,7 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const mongoose_1 = __importDefault(require("mongoose"));
 const index_js_1 = require("../config/index.js");
+const db_js_1 = require("../db.js");
 const User_js_1 = require("../models/User.js");
 const Product_js_1 = require("../models/Product.js");
 const Category_js_1 = require("../models/Category.js");
@@ -290,7 +287,7 @@ We do not claim perfection. We claim intention—and the ongoing work of improvi
 ];
 const seed = async () => {
     try {
-        await mongoose_1.default.connect(index_js_1.config.mongodbUri);
+        await (0, db_js_1.connectDatabase)();
         console.log('Connected to MongoDB');
         if (resetSeed) {
             await Promise.all([
@@ -406,10 +403,12 @@ const seed = async () => {
         console.log('\n✓ Seed completed successfully');
         console.log(`  Admin: ${index_js_1.config.adminEmail}`);
         console.log(`  Demo user: elena@example.com / DemoUser123!`);
+        await (0, db_js_1.disconnectDatabase)();
         process.exit(0);
     }
     catch (err) {
         console.error('Seed failed:', err);
+        await (0, db_js_1.disconnectDatabase)();
         process.exit(1);
     }
 };

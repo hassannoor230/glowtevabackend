@@ -8,29 +8,93 @@ import routes from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
 import { webhook } from './controllers/paymentController.js';
+import { connectDatabase, DatabaseConnectionError, pingDatabase } from './db.js';
 
 const app = express();
 
-app.use(helmet());
-app.use(cors({
-  origin: config.clientUrl,
-  credentials: true,
-}));
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
 
-// Stripe webhook needs raw body
+const isLocalOrigin = (origin: string) =>
+  /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?\/?$/i.test(origin);
+const allowedOrigins = [...new Set([...config.corsOrigins])];
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => {
+    if (!origin || (config.nodeEnv === 'production' && isLocalOrigin(origin))) {
+      callback(null, !origin);
+      return;
+    }
+    callback(null, allowedOrigins.includes(origin));
+  },
+  credentials: true,
+  optionsSuccessStatus: 204,
+};
+
+app.use(helmet());
+app.use(cors(corsOptions));
+app.use(generalLimiter);
+
+app.get('/', (_req, res) => {
+  res.json({
+    success: true,
+    message: 'GlowTeva API is running',
+    environment: config.nodeEnv,
+  });
+});
+
+app.get('/api', (_req, res) => {
+  res.json({
+    success: true,
+    message: 'GlowTeva API is running',
+    version: '1.0.0',
+  });
+});
+
+app.get('/api/health', (_req, res) => {
+  res.json({
+    success: true,
+    status: 'ok',
+    message: 'GlowTeva API is running',
+    version: '1.0.0',
+  });
+});
+
+app.get('/api/health/database', async (_req, res, next) => {
+  try {
+    await pingDatabase();
+    res.json({
+      success: true,
+      status: 'ok',
+      message: 'Database is reachable',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.use('/api', async (_req, _res, next) => {
+  try {
+    await connectDatabase();
+    next();
+  } catch (error) {
+    next(error instanceof DatabaseConnectionError ? error : new DatabaseConnectionError(undefined, error));
+  }
+});
+
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), webhook);
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(mongoSanitize());
-app.use(generalLimiter);
-
-app.get('/api/health', (_req, res) => {
-  res.json({ success: true, message: 'GlowTeva API is running', timestamp: new Date().toISOString() });
-});
-
 app.use('/api', routes);
+
+app.use((_req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+  });
+});
 
 app.use(errorHandler);
 

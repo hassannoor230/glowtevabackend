@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getContacts = exports.getCategories = exports.validateCoupon = exports.submitContact = exports.subscribeNewsletter = void 0;
+exports.getContacts = exports.getCategoriesWithChildren = exports.getCategories = exports.validateCoupon = exports.submitContact = exports.subscribeNewsletter = void 0;
 const Newsletter_js_1 = require("../models/Newsletter.js");
 const Contact_js_1 = require("../models/Contact.js");
 const Coupon_js_1 = require("../models/Coupon.js");
@@ -63,6 +63,14 @@ exports.validateCoupon = (0, asyncHandler_js_1.asyncHandler)(async (req, res) =>
 exports.getCategories = (0, asyncHandler_js_1.asyncHandler)(async (req, res) => {
     const categories = await Category_js_1.Category.find({ isActive: true }).sort({ order: 1 }).lean();
     return (0, apiResponse_js_1.success)(res, categories);
+});
+exports.getCategoriesWithChildren = (0, asyncHandler_js_1.asyncHandler)(async (req, res) => {
+    const mainCategories = await Category_js_1.Category.find({ isActive: true, parent: null }).sort({ order: 1 }).lean();
+    const withChildren = await Promise.all(mainCategories.map(async (cat) => {
+        const children = await Category_js_1.Category.find({ isActive: true, parent: cat._id }).sort({ order: 1 }).lean();
+        return { ...cat, children };
+    }));
+    return (0, apiResponse_js_1.success)(res, withChildren);
 });
 exports.getContacts = (0, asyncHandler_js_1.asyncHandler)(async (req, res) => {
     const contacts = await Contact_js_1.Contact.find().sort({ createdAt: -1 }).limit(50).lean();

@@ -22,6 +22,7 @@ export declare const config: {
         from: string;
     };
     clientUrl: string;
+    corsOrigins: string[];
     adminEmail: string;
     adminPassword: string;
 };

@@ -6,32 +6,41 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.config = void 0;
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
+const getEnv = (name, fallback = '') => (process.env[name] ?? fallback).trim();
+const detectedNodeEnv = (process.env.NODE_ENV || (process.env.VERCEL ? 'production' : 'development')).toLowerCase();
+const defaultClientUrl = detectedNodeEnv === 'production' ? 'https://glowteva.com' : 'http://localhost:3000';
+const configuredClientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || defaultClientUrl;
+const configuredOrigins = [process.env.CLIENT_URL, process.env.FRONTEND_URL, process.env.CORS_ORIGIN]
+    .flatMap((value) => (value ? value.split(',') : []))
+    .map((value) => value.trim())
+    .filter(Boolean);
 exports.config = {
-    port: parseInt(process.env.PORT || '5000', 10),
-    nodeEnv: (process.env.NODE_ENV || 'development').trim(),
-    mongodbUri: (process.env.MONGODB_URI || 'mongodb://localhost:27017/glowteva').trim(),
-    jwtSecret: (process.env.JWT_SECRET || 'glowteva_dev_jwt_secret_key_32chars').trim(),
-    jwtRefreshSecret: (process.env.JWT_REFRESH_SECRET || 'glowteva_dev_refresh_secret_32chars').trim(),
-    jwtExpiresIn: (process.env.JWT_EXPIRES_IN || '15m').trim(),
-    jwtRefreshExpiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '7d').trim(),
-    stripeSecretKey: (process.env.STRIPE_SECRET_KEY || '').trim(),
-    stripeWebhookSecret: (process.env.STRIPE_WEBHOOK_SECRET || '').trim(),
+    port: Number.parseInt(getEnv('PORT', '5000'), 10),
+    nodeEnv: detectedNodeEnv,
+    mongodbUri: getEnv('MONGODB_URI'),
+    jwtSecret: getEnv('JWT_SECRET'),
+    jwtRefreshSecret: getEnv('JWT_REFRESH_SECRET'),
+    jwtExpiresIn: getEnv('JWT_EXPIRES_IN', '15m'),
+    jwtRefreshExpiresIn: getEnv('JWT_REFRESH_EXPIRES_IN', '7d'),
+    stripeSecretKey: getEnv('STRIPE_SECRET_KEY'),
+    stripeWebhookSecret: getEnv('STRIPE_WEBHOOK_SECRET'),
     cloudinary: {
-        cloudName: (process.env.CLOUDINARY_CLOUD_NAME || '').trim(),
-        apiKey: (process.env.CLOUDINARY_API_KEY || '').trim(),
-        apiSecret: (process.env.CLOUDINARY_API_SECRET || '').trim(),
+        cloudName: getEnv('CLOUDINARY_CLOUD_NAME'),
+        apiKey: getEnv('CLOUDINARY_API_KEY'),
+        apiSecret: getEnv('CLOUDINARY_API_SECRET'),
     },
     smtp: {
-        host: (process.env.SMTP_HOST || '').trim(),
-        port: parseInt((process.env.SMTP_PORT || '587').trim(), 10),
-        secure: (process.env.SMTP_SECURE || '').trim() === 'true',
-        user: (process.env.SMTP_USER || '').trim(),
-        pass: (process.env.SMTP_PASS || '').trim(),
-        from: (process.env.SMTP_FROM || 'noreply@glowteva.com').trim(),
+        host: getEnv('SMTP_HOST'),
+        port: Number.parseInt(getEnv('SMTP_PORT', '587'), 10),
+        secure: getEnv('SMTP_SECURE').toLowerCase() === 'true',
+        user: getEnv('SMTP_USER'),
+        pass: getEnv('SMTP_PASS'),
+        from: getEnv('SMTP_FROM', 'noreply@glowteva.com'),
     },
-    clientUrl: (process.env.CLIENT_URL || 'http://localhost:3000').trim(),
-    adminEmail: (process.env.ADMIN_EMAIL || 'admin@glowteva.com').trim(),
-    adminPassword: (process.env.ADMIN_PASSWORD || 'GlowTevaAdmin2026!').trim(),
+    clientUrl: configuredClientUrl.trim(),
+    corsOrigins: [...new Set([...configuredOrigins, configuredClientUrl.trim()])].filter((origin) => origin && origin !== '*'),
+    adminEmail: getEnv('ADMIN_EMAIL', 'admin@glowteva.com'),
+    adminPassword: getEnv('ADMIN_PASSWORD'),
 };
 exports.default = exports.config;
 //# sourceMappingURL=index.js.map

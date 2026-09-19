@@ -1,3 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-export declare const errorHandler: (err: any, req: Request, res: Response, next: NextFunction) => Response<any, Record<string, any>> | undefined;
+interface HttpError extends Error {
+    statusCode?: number;
+    status?: number;
+    code?: number;
+    errors?: Record<string, any>;
+    keyPattern?: Record<string, number>;
+}
+export declare const errorHandler: (err: HttpError, req: Request, res: Response, next: NextFunction) => void | Response<any, Record<string, any>>;
+export {};
 //# sourceMappingURL=errorHandler.d.ts.map
