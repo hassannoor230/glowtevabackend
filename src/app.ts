@@ -18,8 +18,6 @@ app.set('trust proxy', 1);
 const isLocalOrigin = (origin: string) =>
   /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?\/?$/i.test(origin);
 const allowedOrigins = [...new Set([...config.corsOrigins])];
-const isAllowedOrigin = (origin: string) =>
-  allowedOrigins.includes(origin) || origin === 'https://glowteva.vercel.app';
 
 const corsOptions = {
   origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => {
@@ -40,29 +38,6 @@ const corsOptions = {
 };
 
 app.use(helmet());
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-
-  if (origin && isAllowedOrigin(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Vary', 'Origin');
-  }
-
-  if (req.method === 'OPTIONS') {
-    if (origin && !isAllowedOrigin(origin)) {
-      res.status(403).end();
-      return;
-    }
-
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    res.status(204).end();
-    return;
-  }
-
-  next();
-});
 app.use(cors(corsOptions));
 app.use(generalLimiter);
 
