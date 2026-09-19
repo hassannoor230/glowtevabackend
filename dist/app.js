@@ -17,12 +17,16 @@ const db_js_1 = require("./db.js");
 const app = (0, express_1.default)();
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
-const localOrigins = index_js_1.config.nodeEnv === 'production'
-    ? []
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'];
-const allowedOrigins = [...new Set([...localOrigins, ...index_js_1.config.corsOrigins])];
+const isLocalOrigin = (origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?\/?$/i.test(origin);
+const allowedOrigins = [...new Set([...index_js_1.config.corsOrigins])];
 const corsOptions = {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+        if (!origin || (index_js_1.config.nodeEnv === 'production' && isLocalOrigin(origin))) {
+            callback(null, !origin);
+            return;
+        }
+        callback(null, allowedOrigins.includes(origin));
+    },
     credentials: true,
     optionsSuccessStatus: 204,
 };

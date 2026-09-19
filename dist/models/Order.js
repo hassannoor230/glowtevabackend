@@ -114,7 +114,6 @@ const orderSchema = new mongoose_1.Schema({
     statusHistory: { type: [orderStatusHistorySchema], default: [] },
 }, { timestamps: true });
 orderSchema.index({ user: 1, createdAt: -1 });
-orderSchema.index({ orderNumber: 1 });
 orderSchema.index({ orderStatus: 1 });
 orderSchema.index({ paymentStatus: 1 });
 orderSchema.index({ paymentMethod: 1 });

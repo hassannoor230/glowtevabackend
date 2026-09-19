@@ -8,12 +8,21 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const getEnv = (name, fallback = '') => (process.env[name] ?? fallback).trim();
 const detectedNodeEnv = (process.env.NODE_ENV || (process.env.VERCEL ? 'production' : 'development')).toLowerCase();
-const defaultClientUrl = detectedNodeEnv === 'production' ? 'https://glowteva.com' : 'http://localhost:3000';
+const productionClientUrls = ['https://glowteva.vercel.app', 'https://glowteva.com'];
+const defaultClientUrl = detectedNodeEnv === 'production' ? productionClientUrls[0] : 'http://localhost:3000';
 const configuredClientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || defaultClientUrl;
-const configuredOrigins = [process.env.CLIENT_URL, process.env.FRONTEND_URL, process.env.CORS_ORIGIN]
+const isLocalOrigin = (origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?\/?$/i.test(origin);
+const frontendOrigins = [process.env.CLIENT_URL, process.env.FRONTEND_URL]
     .flatMap((value) => (value ? value.split(',') : []))
     .map((value) => value.trim())
     .filter(Boolean);
+const explicitCorsOrigins = (process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+const corsOrigins = detectedNodeEnv === 'production'
+    ? [...productionClientUrls, ...frontendOrigins.filter((origin) => !isLocalOrigin(origin)), ...explicitCorsOrigins]
+    : [...frontendOrigins, ...explicitCorsOrigins, 'http://localhost:3000', 'http://127.0.0.1:3000'];
 exports.config = {
     port: Number.parseInt(getEnv('PORT', '5000'), 10),
     nodeEnv: detectedNodeEnv,
@@ -38,7 +47,8 @@ exports.config = {
         from: getEnv('SMTP_FROM', 'noreply@glowteva.com'),
     },
     clientUrl: configuredClientUrl.trim(),
-    corsOrigins: [...new Set([...configuredOrigins, configuredClientUrl.trim()])].filter((origin) => origin && origin !== '*'),
+    corsOrigins: [...new Set([...corsOrigins, configuredClientUrl.trim(), defaultClientUrl])].filter((origin) => origin && origin !== '*' && (detectedNodeEnv !== 'production' ||
+        !isLocalOrigin(origin))),
     adminEmail: getEnv('ADMIN_EMAIL', 'admin@glowteva.com'),
     adminPassword: getEnv('ADMIN_PASSWORD'),
 };
