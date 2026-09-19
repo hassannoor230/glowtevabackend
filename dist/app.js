@@ -30,9 +30,21 @@ const corsOptions = {
     credentials: true,
     optionsSuccessStatus: 204,
 };
+const setCorsHeaders = (res, origin) => {
+    if (origin && allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+};
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)(corsOptions));
 app.use(rateLimiter_js_1.generalLimiter);
+app.use((_req, res, next) => {
+    setCorsHeaders(res, _req.headers.origin);
+    if (res.headersSent)
+        return next();
+    next();
+});
 app.get('/', (_req, res) => {
     res.json({
         success: true,
@@ -84,6 +96,7 @@ app.use((0, cookie_parser_1.default)());
 app.use((0, express_mongo_sanitize_1.default)());
 app.use('/api', index_js_2.default);
 app.use((_req, res) => {
+    setCorsHeaders(res, _req.headers.origin);
     res.status(404).json({
         success: false,
         message: 'Route not found',
