@@ -1,0 +1,65 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.productQuerySchema = exports.productSchema = void 0;
+const zod_1 = require("zod");
+const productVariantSchema = zod_1.z.object({
+    _id: zod_1.z.string().optional(),
+    sku: zod_1.z.string().min(1),
+    options: zod_1.z.record(zod_1.z.string(), zod_1.z.string()),
+    price: zod_1.z.number().min(0).optional(),
+    compareAtPrice: zod_1.z.number().min(0).optional(),
+    stock: zod_1.z.number().int().min(0).default(0),
+    lowStockThreshold: zod_1.z.number().int().min(0).default(5),
+    weight: zod_1.z.string().optional(),
+    image: zod_1.z.string().optional(),
+    images: zod_1.z.array(zod_1.z.string()).optional(),
+    barcode: zod_1.z.string().optional(),
+    status: zod_1.z.enum(['active', 'inactive', 'out_of_stock']).optional(),
+});
+exports.productSchema = zod_1.z.object({
+    name: zod_1.z.string().min(2).max(200),
+    description: zod_1.z.string().min(10),
+    shortDescription: zod_1.z.string().min(10).max(300),
+    price: zod_1.z.number().positive(),
+    compareAtPrice: zod_1.z.number().positive().optional(),
+    category: zod_1.z.string().min(1),
+    productType: zod_1.z.string().min(1),
+    skinConcerns: zod_1.z.array(zod_1.z.string()).optional(),
+    ingredients: zod_1.z.array(zod_1.z.string()).optional(),
+    benefits: zod_1.z.array(zod_1.z.string()).optional(),
+    howToUse: zod_1.z.string().optional(),
+    images: zod_1.z.array(zod_1.z.string()).optional(),
+    thumbnail: zod_1.z.string().min(1),
+    stock: zod_1.z.number().int().min(0),
+    sku: zod_1.z.string().min(1),
+    featured: zod_1.z.boolean().optional(),
+    bestSeller: zod_1.z.boolean().optional(),
+    newArrival: zod_1.z.boolean().optional(),
+    tags: zod_1.z.array(zod_1.z.string()).optional(),
+    options: zod_1.z.array(zod_1.z.object({
+        name: zod_1.z.string().min(1),
+        values: zod_1.z.array(zod_1.z.string().min(1)).min(1),
+    })).optional(),
+    variants: zod_1.z.array(productVariantSchema).optional(),
+    status: zod_1.z.enum(['active', 'draft', 'archived']).optional(),
+});
+exports.productQuerySchema = zod_1.z.object({
+    page: zod_1.z.coerce.number().int().min(1).default(1),
+    limit: zod_1.z.coerce.number().int().min(1).max(50).default(12),
+    category: zod_1.z.string().optional(),
+    productType: zod_1.z.string().optional(),
+    skinConcern: zod_1.z.string().optional(),
+    ingredient: zod_1.z.string().optional(),
+    minPrice: zod_1.z.coerce.number().min(0).optional(),
+    maxPrice: zod_1.z.coerce.number().min(0).optional(),
+    rating: zod_1.z.coerce.number().min(0).max(5).optional(),
+    inStock: zod_1.z.coerce.boolean().optional(),
+    featured: zod_1.z.coerce.boolean().optional(),
+    bestSeller: zod_1.z.coerce.boolean().optional(),
+    newArrival: zod_1.z.coerce.boolean().optional(),
+    tags: zod_1.z.string().optional(),
+    onSale: zod_1.z.coerce.boolean().optional(),
+    search: zod_1.z.string().optional(),
+    sort: zod_1.z.enum(['newest', 'price-asc', 'price-desc', 'rating', 'name']).default('newest'),
+});
+//# sourceMappingURL=product.js.map
