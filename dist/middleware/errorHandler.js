@@ -4,13 +4,6 @@ exports.errorHandler = void 0;
 const zod_1 = require("zod");
 const index_js_1 = require("../config/index.js");
 const db_js_1 = require("../db.js");
-const allowedOrigins = [...new Set([...index_js_1.config.corsOrigins])];
-const setCorsErrorHeaders = (res, origin) => {
-    if (origin && allowedOrigins.includes(origin)) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-        res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
-};
 const sanitizeLogValue = (value) => value.replace(/mongodb(?:\+srv)?:\/\/[^\s)]+/gi, 'mongodb://[redacted]');
 const databaseErrorNames = new Set([
     'MongooseError',
@@ -32,21 +25,16 @@ const errorHandler = (err, req, res, next) => {
             : 500;
     const isProduction = index_js_1.config.nodeEnv === 'production';
     const safeMessage = err.message ? sanitizeLogValue(err.message) : 'Internal server error';
-    const origin = req.headers.origin;
-    const send = (statusCode, data) => {
-        setCorsErrorHeaders(res, origin);
-        res.status(statusCode).json(data);
-    };
     if (err instanceof db_js_1.DatabaseConnectionError || isDatabaseAvailabilityError(err)) {
         console.error('Database request failed:', {
             name: err.name,
             message: safeMessage,
             path: req.originalUrl,
         });
-        return send(503, { success: false, message: 'Database connection error' });
+        return res.status(503).json({ success: false, message: 'Database connection error' });
     }
     if (err instanceof zod_1.ZodError) {
-        return send(400, {
+        return res.status(400).json({
             success: false,
             message: 'Validation failed',
             errors: err.errors.reduce((acc, item) => {
@@ -56,7 +44,7 @@ const errorHandler = (err, req, res, next) => {
         });
     }
     if (err.name === 'ValidationError') {
-        return send(400, {
+        return res.status(400).json({
             success: false,
             message: 'Validation failed',
             errors: Object.keys(err.errors || {}).reduce((acc, key) => {
@@ -67,13 +55,13 @@ const errorHandler = (err, req, res, next) => {
     }
     if (err.code === 11000) {
         const field = Object.keys(err.keyPattern || {})[0] || 'field';
-        return send(409, { success: false, message: `${field} already exists` });
+        return res.status(409).json({ success: false, message: `${field} already exists` });
     }
     if (err.name === 'CastError') {
-        return send(400, { success: false, message: 'Invalid ID format' });
+        return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }
     if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-        return send(400, { success: false, message: 'Invalid JSON body' });
+        return res.status(400).json({ success: false, message: 'Invalid JSON body' });
     }
     if (status >= 500) {
         console.error(`Unhandled API error [${req.method} ${req.originalUrl}]:`, {
@@ -81,7 +69,7 @@ const errorHandler = (err, req, res, next) => {
             message: safeMessage,
         });
     }
-    return send(status, {
+    return res.status(status).json({
         success: false,
         message: status === 500 && isProduction ? 'Internal server error' : safeMessage,
     });
