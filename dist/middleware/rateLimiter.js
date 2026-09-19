@@ -8,6 +8,7 @@ const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 exports.generalLimiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000,
     max: 200,
+    skip: (req) => req.method === 'OPTIONS',
     message: { success: false, message: 'Too many requests, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false,
@@ -15,6 +16,7 @@ exports.generalLimiter = (0, express_rate_limit_1.default)({
 exports.authLimiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000,
     max: 20,
+    skip: (req) => req.method === 'OPTIONS',
     message: { success: false, message: 'Too many authentication attempts.' },
     standardHeaders: true,
     legacyHeaders: false,

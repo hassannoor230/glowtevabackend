@@ -18,6 +18,37 @@ app.set('trust proxy', 1);
 const isLocalOrigin = (origin: string) =>
   /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?\/?$/i.test(origin);
 const allowedOrigins = [...new Set([...config.corsOrigins])];
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+  'Access-Control-Allow-Credentials': 'true',
+};
+
+const setCorsHeaders = (res: express.Response, origin?: string) => {
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+};
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin as string | undefined;
+  setCorsHeaders(res, origin);
+  if (req.method === 'OPTIONS') {
+    if (origin && allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Methods', corsHeaders['Access-Control-Allow-Methods']);
+      res.setHeader('Access-Control-Allow-Headers', corsHeaders['Access-Control-Allow-Headers']);
+      res.setHeader('Access-Control-Max-Age', '86400');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+    return res.status(204).end();
+  }
+  next();
+});
+
 const corsOptions = {
   origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => {
     if (!origin || (config.nodeEnv === 'production' && isLocalOrigin(origin))) {
@@ -28,13 +59,6 @@ const corsOptions = {
   },
   credentials: true,
   optionsSuccessStatus: 204,
-};
-
-const setCorsHeaders = (res: express.Response, origin?: string) => {
-  if (origin && allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
 };
 
 app.use(helmet());
