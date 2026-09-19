@@ -19,53 +19,46 @@ app.disable('x-powered-by');
 app.set('trust proxy', 1);
 const isLocalOrigin = (origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?\/?$/i.test(origin);
 const allowedOrigins = [...new Set([...index_js_1.config.corsOrigins])];
-const corsHeaders = {
-    'Access-Control-Allow-Origin': '',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-    'Access-Control-Allow-Credentials': 'true',
-};
-const setCorsHeaders = (res, origin) => {
-    if (origin && allowedOrigins.includes(origin)) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-        res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
-};
-app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    setCorsHeaders(res, origin);
-    if (req.method === 'OPTIONS') {
-        if (origin && allowedOrigins.includes(origin)) {
-            res.setHeader('Access-Control-Allow-Origin', origin);
-            res.setHeader('Access-Control-Allow-Methods', corsHeaders['Access-Control-Allow-Methods']);
-            res.setHeader('Access-Control-Allow-Headers', corsHeaders['Access-Control-Allow-Headers']);
-            res.setHeader('Access-Control-Max-Age', '86400');
-            res.setHeader('Access-Control-Allow-Credentials', 'true');
-        }
-        return res.status(204).end();
-    }
-    next();
-});
+const isAllowedOrigin = (origin) => allowedOrigins.includes(origin) || origin === 'https://glowteva.vercel.app';
 const corsOptions = {
     origin: (origin, callback) => {
-        if (!origin || (index_js_1.config.nodeEnv === 'production' && isLocalOrigin(origin))) {
-            callback(null, !origin);
+        if (!origin) {
+            callback(null, true);
+            return;
+        }
+        if (index_js_1.config.nodeEnv === 'production' && isLocalOrigin(origin)) {
+            callback(null, false);
             return;
         }
         callback(null, allowedOrigins.includes(origin));
     },
     credentials: true,
     optionsSuccessStatus: 204,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
 app.use((0, helmet_1.default)());
-app.use((0, cors_1.default)(corsOptions));
-app.use(rateLimiter_js_1.generalLimiter);
-app.use((_req, res, next) => {
-    setCorsHeaders(res, _req.headers.origin);
-    if (res.headersSent)
-        return next();
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin && isAllowedOrigin(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Vary', 'Origin');
+    }
+    if (req.method === 'OPTIONS') {
+        if (origin && !isAllowedOrigin(origin)) {
+            res.status(403).end();
+            return;
+        }
+        res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        res.status(204).end();
+        return;
+    }
     next();
 });
+app.use((0, cors_1.default)(corsOptions));
+app.use(rateLimiter_js_1.generalLimiter);
 app.get('/', (_req, res) => {
     res.json({
         success: true,
@@ -117,7 +110,6 @@ app.use((0, cookie_parser_1.default)());
 app.use((0, express_mongo_sanitize_1.default)());
 app.use('/api', index_js_2.default);
 app.use((_req, res) => {
-    setCorsHeaders(res, _req.headers.origin);
     res.status(404).json({
         success: false,
         message: 'Route not found',
