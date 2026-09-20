@@ -52,6 +52,7 @@ app.use((req, res, next) => {
 
 app.use(helmet());
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(generalLimiter);
 
 app.get('/', (_req, res) => {

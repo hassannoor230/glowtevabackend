@@ -50,6 +50,7 @@ app.use((req, res, next) => {
 });
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)(corsOptions));
+app.options('*', (0, cors_1.default)(corsOptions));
 app.use(rateLimiter_js_1.generalLimiter);
 app.get('/', (_req, res) => {
     res.json({
