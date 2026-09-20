@@ -28,12 +28,12 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 204,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 };
 
-app.use(helmet());
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
+app.use(helmet());
 app.use(generalLimiter);
 
 app.get('/', (_req, res) => {

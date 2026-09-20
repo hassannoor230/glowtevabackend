@@ -29,11 +29,11 @@ const corsOptions = {
     credentials: true,
     optionsSuccessStatus: 204,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 };
-app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)(corsOptions));
 app.options('*', (0, cors_1.default)(corsOptions));
+app.use((0, helmet_1.default)());
 app.use(rateLimiter_js_1.generalLimiter);
 app.get('/', (_req, res) => {
     res.json({
