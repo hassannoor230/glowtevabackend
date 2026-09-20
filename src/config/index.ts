@@ -9,7 +9,7 @@ const isOnVercel = !!process.env.VERCEL;
 const productionClientUrls = ['https://glowteva.vercel.app', 'https://glowteva.com'];
 const defaultClientUrl = isOnVercel ? productionClientUrls[0] : (detectedNodeEnv === 'production' ? productionClientUrls[0] : 'http://localhost:5173');
 const configuredClientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || defaultClientUrl;
-const localClientUrls = ['http://localhost:3000', 'http://localhost:5173'];
+const localClientUrls = ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000'];
 const frontendOrigins = [process.env.CLIENT_URL, process.env.FRONTEND_URL]
   .flatMap((value) => (value ? value.split(',') : []))
   .map((value) => value.trim())
