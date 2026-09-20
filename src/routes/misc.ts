@@ -9,5 +9,6 @@ router.post('/contact', contactLimiter, misc.submitContact);
 router.post('/coupon/validate', misc.validateCoupon);
 router.get('/categories', misc.getCategories);
 router.get('/categories/tree', misc.getCategoriesWithChildren);
+router.get('/email/test', misc.testEmail);
 
 export default router;

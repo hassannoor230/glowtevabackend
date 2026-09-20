@@ -80,6 +80,19 @@ export const getCategoriesWithChildren = asyncHandler(async (req, res) => {
   return success(res, withChildren);
 });
 
+export const testEmail = asyncHandler(async (_req, res) => {
+  const result = await emailService.sendEmail({
+    to: config.adminEmail,
+    subject: 'Email Test - GlowTeva',
+    html: '<p>This is a test email to verify SMTP delivery.</p>',
+    text: 'This is a test email to verify SMTP delivery.',
+  });
+  if (result) {
+    return success(res, null, 'Test email sent successfully', 200);
+  }
+  return error(res, 'Test email failed. Check server logs for details.', 500);
+});
+
 export const getContacts = asyncHandler(async (req: AuthRequest, res) => {
   const contacts = await Contact.find().sort({ createdAt: -1 }).limit(50).lean();
   return success(res, contacts);
