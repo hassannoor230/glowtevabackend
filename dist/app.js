@@ -17,16 +17,11 @@ const db_js_1 = require("./db.js");
 const app = (0, express_1.default)();
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
-const isLocalOrigin = (origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?\/?$/i.test(origin);
 const allowedOrigins = [...new Set([...index_js_1.config.corsOrigins])];
 const corsOptions = {
     origin: (origin, callback) => {
         if (!origin) {
             callback(null, true);
-            return;
-        }
-        if (index_js_1.config.nodeEnv === 'production' && isLocalOrigin(origin)) {
-            callback(null, false);
             return;
         }
         callback(null, allowedOrigins.includes(origin));
@@ -36,18 +31,6 @@ const corsOptions = {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
-app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    if (req.method === 'OPTIONS' && origin && allowedOrigins.includes(origin)) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-        res.setHeader('Access-Control-Max-Age', '86400');
-        res.setHeader('Access-Control-Allow-Credentials', 'true');
-        return res.status(204).end();
-    }
-    next();
-});
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)(corsOptions));
 app.options('*', (0, cors_1.default)(corsOptions));
@@ -103,11 +86,6 @@ app.use((0, cookie_parser_1.default)());
 app.use((0, express_mongo_sanitize_1.default)());
 app.use('/api', index_js_2.default);
 app.use((_req, res) => {
-    const origin = _req.headers.origin;
-    if (origin && allowedOrigins.includes(origin)) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-        res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
     res.status(404).json({
         success: false,
         message: 'Route not found',

@@ -15,18 +15,12 @@ const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
 
-const isLocalOrigin = (origin: string) =>
-  /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?\/?$/i.test(origin);
 const allowedOrigins = [...new Set([...config.corsOrigins])];
 
 const corsOptions = {
   origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => {
     if (!origin) {
       callback(null, true);
-      return;
-    }
-    if (config.nodeEnv === 'production' && isLocalOrigin(origin)) {
-      callback(null, false);
       return;
     }
     callback(null, allowedOrigins.includes(origin));
@@ -36,19 +30,6 @@ const corsOptions = {
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
-
-app.use((req, res, next) => {
-  const origin = req.headers.origin as string | undefined;
-  if (req.method === 'OPTIONS' && origin && allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    res.setHeader('Access-Control-Max-Age', '86400');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    return res.status(204).end();
-  }
-  next();
-});
 
 app.use(helmet());
 app.use(cors(corsOptions));
@@ -111,11 +92,6 @@ app.use(mongoSanitize());
 app.use('/api', routes);
 
 app.use((_req, res) => {
-  const origin = _req.headers.origin as string | undefined;
-  if (origin && allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
   res.status(404).json({
     success: false,
     message: 'Route not found',

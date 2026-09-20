@@ -6,16 +6,6 @@
       "use": "@vercel/node"
     }
   ],
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/api/index.ts"
-    },
-    {
-      "source": "/:path*",
-      "destination": "/api/index.ts"
-    }
-  ],
   "env": {
     "NODE_ENV": "production"
   },

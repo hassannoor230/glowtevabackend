@@ -9,8 +9,7 @@ const isOnVercel = !!process.env.VERCEL;
 const productionClientUrls = ['https://glowteva.vercel.app', 'https://glowteva.com'];
 const defaultClientUrl = isOnVercel ? productionClientUrls[0] : (detectedNodeEnv === 'production' ? productionClientUrls[0] : 'http://localhost:3000');
 const configuredClientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || defaultClientUrl;
-const isLocalOrigin = (origin: string) =>
-  /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?\/?$/i.test(origin);
+const localClientUrls = ['http://localhost:3000', 'http://localhost:5173'];
 const frontendOrigins = [process.env.CLIENT_URL, process.env.FRONTEND_URL]
   .flatMap((value) => (value ? value.split(',') : []))
   .map((value) => value.trim())
@@ -19,11 +18,7 @@ const explicitCorsOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
   .map((value) => value.trim())
   .filter(Boolean);
-const baseOrigins = isOnVercel
-  ? [...productionClientUrls, ...frontendOrigins.filter((origin) => !isLocalOrigin(origin)), ...explicitCorsOrigins]
-  : detectedNodeEnv === 'production'
-    ? [...productionClientUrls, ...frontendOrigins.filter((origin) => !isLocalOrigin(origin)), ...explicitCorsOrigins]
-    : [...frontendOrigins, ...explicitCorsOrigins, 'http://localhost:3000', 'http://127.0.0.1:3000'];
+const baseOrigins = [...productionClientUrls, ...localClientUrls, ...frontendOrigins, ...explicitCorsOrigins];
 
 export const config = {
   port: Number.parseInt(getEnv('PORT', '5000'), 10),
@@ -50,10 +45,7 @@ export const config = {
   },
   clientUrl: configuredClientUrl.trim(),
   corsOrigins: [...new Set([...baseOrigins, configuredClientUrl.trim(), defaultClientUrl])].filter(
-    (origin) => origin && origin !== '*' && (
-      !isOnVercel ||
-      !isLocalOrigin(origin)
-    )
+    (origin) => origin && origin !== '*'
   ),
   adminEmail: getEnv('ADMIN_EMAIL', 'admin@glowteva.com'),
   adminPassword: getEnv('ADMIN_PASSWORD'),

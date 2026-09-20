@@ -11,15 +11,6 @@ interface HttpError extends Error {
   keyPattern?: Record<string, number>;
 }
 
-const allowedOrigins = [...new Set([...config.corsOrigins])];
-
-const setCorsErrorHeaders = (res: Response, origin: string | undefined) => {
-  if (origin && allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
-};
-
 const sanitizeLogValue = (value: string) =>
   value.replace(/mongodb(?:\+srv)?:\/\/[^\s)]+/gi, 'mongodb://[redacted]');
 
@@ -49,10 +40,7 @@ export const errorHandler = (err: HttpError, req: Request, res: Response, next: 
       : 500;
   const isProduction = config.nodeEnv === 'production';
   const safeMessage = err.message ? sanitizeLogValue(err.message) : 'Internal server error';
-  const origin = req.headers.origin as string | undefined;
-
   const send = (statusCode: number, data: unknown) => {
-    setCorsErrorHeaders(res, origin);
     res.status(statusCode).json(data);
   };
 

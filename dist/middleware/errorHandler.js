@@ -4,13 +4,6 @@ exports.errorHandler = void 0;
 const zod_1 = require("zod");
 const index_js_1 = require("../config/index.js");
 const db_js_1 = require("../db.js");
-const allowedOrigins = [...new Set([...index_js_1.config.corsOrigins])];
-const setCorsErrorHeaders = (res, origin) => {
-    if (origin && allowedOrigins.includes(origin)) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-        res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
-};
 const sanitizeLogValue = (value) => value.replace(/mongodb(?:\+srv)?:\/\/[^\s)]+/gi, 'mongodb://[redacted]');
 const databaseErrorNames = new Set([
     'MongooseError',
@@ -32,9 +25,7 @@ const errorHandler = (err, req, res, next) => {
             : 500;
     const isProduction = index_js_1.config.nodeEnv === 'production';
     const safeMessage = err.message ? sanitizeLogValue(err.message) : 'Internal server error';
-    const origin = req.headers.origin;
     const send = (statusCode, data) => {
-        setCorsErrorHeaders(res, origin);
         res.status(statusCode).json(data);
     };
     if (err instanceof db_js_1.DatabaseConnectionError || isDatabaseAvailabilityError(err)) {
