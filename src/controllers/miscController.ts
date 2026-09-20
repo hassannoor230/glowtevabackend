@@ -7,6 +7,7 @@ import { success, error } from '../utils/apiResponse.js';
 import { contactSchema, newsletterSchema } from '../validators/order.js';
 import { AuthRequest } from '../middleware/auth.js';
 import { emailService } from '../services/emailService.js';
+import { config } from '../config/index.js';
 
 export const subscribeNewsletter = asyncHandler(async (req, res) => {
   const data = newsletterSchema.parse(req.body);
@@ -15,9 +16,13 @@ export const subscribeNewsletter = asyncHandler(async (req, res) => {
     if (existing.isActive) return error(res, 'Already subscribed', 400);
     existing.isActive = true;
     await existing.save();
+    emailService.sendNewsletterWelcome(data.email, config.adminEmail).catch(console.error);
+    emailService.sendNewsletterAdminNotification(data.email).catch(console.error);
     return success(res, null, 'Welcome back to GlowTeva');
   }
   await Newsletter.create({ email: data.email });
+  emailService.sendNewsletterWelcome(data.email, config.adminEmail).catch(console.error);
+  emailService.sendNewsletterAdminNotification(data.email).catch(console.error);
   return success(res, null, 'Successfully subscribed to GlowTeva', 201);
 });
 

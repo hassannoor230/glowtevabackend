@@ -4,11 +4,13 @@ exports.updateOrderStatus = exports.getAllOrders = exports.getOrderById = export
 const Order_js_1 = require("../models/Order.js");
 const Product_js_1 = require("../models/Product.js");
 const Coupon_js_1 = require("../models/Coupon.js");
+const User_js_1 = require("../models/User.js");
 const asyncHandler_js_1 = require("../utils/asyncHandler.js");
 const apiResponse_js_1 = require("../utils/apiResponse.js");
 const payment_js_1 = require("../validators/payment.js");
 const Payment_js_1 = require("../models/Payment.js");
 const Settings_js_1 = require("../models/Settings.js");
+const emailService_js_1 = require("../services/emailService.js");
 const generateOrderNumber = () => {
     const date = new Date();
     const prefix = 'GT';
@@ -134,6 +136,49 @@ exports.createOrder = (0, asyncHandler_js_1.asyncHandler)(async (req, res) => {
         status: 'PENDING',
         transactionId: data.paymentReference,
     });
+    const user = await User_js_1.User.findById(req.user.userId).select('name email').lean();
+    const userName = user?.name || 'Valued Customer';
+    const userEmail = user?.email || '';
+    emailService_js_1.emailService.sendOrderConfirmation({
+        orderNumber: order.orderNumber,
+        orderId: order._id.toString(),
+        userEmail,
+        userName,
+        items: order.items.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            subtotal: item.subtotal ?? 0,
+            thumbnail: item.thumbnail,
+        })),
+        subtotal,
+        shippingCost,
+        discount,
+        total,
+        paymentMethod,
+        orderStatus: order.orderStatus,
+        shippingAddress: data.shippingAddress,
+    }).catch(console.error);
+    emailService_js_1.emailService.sendOrderAdminNotification({
+        orderNumber: order.orderNumber,
+        orderId: order._id.toString(),
+        userName,
+        userEmail,
+        items: order.items.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            subtotal: item.subtotal ?? 0,
+            thumbnail: item.thumbnail,
+        })),
+        subtotal,
+        shippingCost,
+        discount,
+        total,
+        paymentMethod,
+        orderStatus: order.orderStatus,
+        shippingAddress: data.shippingAddress,
+    }).catch(console.error);
     return (0, apiResponse_js_1.success)(res, order, 'Order created', 201);
 });
 exports.getMyOrders = (0, asyncHandler_js_1.asyncHandler)(async (req, res) => {

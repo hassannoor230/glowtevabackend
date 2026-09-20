@@ -9,6 +9,7 @@ const asyncHandler_js_1 = require("../utils/asyncHandler.js");
 const apiResponse_js_1 = require("../utils/apiResponse.js");
 const order_js_1 = require("../validators/order.js");
 const emailService_js_1 = require("../services/emailService.js");
+const index_js_1 = require("../config/index.js");
 exports.subscribeNewsletter = (0, asyncHandler_js_1.asyncHandler)(async (req, res) => {
     const data = order_js_1.newsletterSchema.parse(req.body);
     const existing = await Newsletter_js_1.Newsletter.findOne({ email: data.email });
@@ -17,9 +18,13 @@ exports.subscribeNewsletter = (0, asyncHandler_js_1.asyncHandler)(async (req, re
             return (0, apiResponse_js_1.error)(res, 'Already subscribed', 400);
         existing.isActive = true;
         await existing.save();
+        emailService_js_1.emailService.sendNewsletterWelcome(data.email, index_js_1.config.adminEmail).catch(console.error);
+        emailService_js_1.emailService.sendNewsletterAdminNotification(data.email).catch(console.error);
         return (0, apiResponse_js_1.success)(res, null, 'Welcome back to GlowTeva');
     }
     await Newsletter_js_1.Newsletter.create({ email: data.email });
+    emailService_js_1.emailService.sendNewsletterWelcome(data.email, index_js_1.config.adminEmail).catch(console.error);
+    emailService_js_1.emailService.sendNewsletterAdminNotification(data.email).catch(console.error);
     return (0, apiResponse_js_1.success)(res, null, 'Successfully subscribed to GlowTeva', 201);
 });
 exports.submitContact = (0, asyncHandler_js_1.asyncHandler)(async (req, res) => {

@@ -2,12 +2,14 @@ import { Response } from 'express';
 import { Order } from '../models/Order.js';
 import { Product } from '../models/Product.js';
 import { Coupon } from '../models/Coupon.js';
+import { User } from '../models/User.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { success, error } from '../utils/apiResponse.js';
 import { createOrderSchema } from '../validators/payment.js';
 import { Payment } from '../models/Payment.js';
 import { PaymentSettings } from '../models/Settings.js';
 import { AuthRequest } from '../middleware/auth.js';
+import { emailService } from '../services/emailService.js';
 
 const generateOrderNumber = () => {
   const date = new Date();
@@ -129,6 +131,52 @@ export const createOrder = asyncHandler(async (req: AuthRequest, res) => {
     status: 'PENDING',
     transactionId: data.paymentReference,
   });
+
+  const user = await User.findById(req.user!.userId).select('name email').lean();
+  const userName = user?.name || 'Valued Customer';
+  const userEmail = user?.email || '';
+
+  emailService.sendOrderConfirmation({
+    orderNumber: order.orderNumber,
+    orderId: order._id.toString(),
+    userEmail,
+    userName,
+    items: order.items.map((item) => ({
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price,
+      subtotal: item.subtotal ?? 0,
+      thumbnail: item.thumbnail,
+    })),
+    subtotal,
+    shippingCost,
+    discount,
+    total,
+    paymentMethod,
+    orderStatus: order.orderStatus,
+    shippingAddress: data.shippingAddress,
+  }).catch(console.error);
+
+  emailService.sendOrderAdminNotification({
+    orderNumber: order.orderNumber,
+    orderId: order._id.toString(),
+    userName,
+    userEmail,
+    items: order.items.map((item) => ({
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price,
+      subtotal: item.subtotal ?? 0,
+      thumbnail: item.thumbnail,
+    })),
+    subtotal,
+    shippingCost,
+    discount,
+    total,
+    paymentMethod,
+    orderStatus: order.orderStatus,
+    shippingAddress: data.shippingAddress,
+  }).catch(console.error);
 
   return success(res, order, 'Order created', 201);
 });
