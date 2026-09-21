@@ -40,10 +40,13 @@ class EmailService {
                 html: options.html,
                 text: options.text,
             });
+            console.log('Email sent successfully:', options.subject, '→', options.to);
             return true;
         }
         catch (error) {
-            console.error('Failed to send email:', error);
+            const errMsg = error?.message || String(error);
+            const errCode = error?.code || 'UNKNOWN';
+            console.error(`Failed to send email [${errCode}]:`, options.subject, '→', options.to, '-', errMsg);
             return false;
         }
     }

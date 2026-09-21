@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getContacts = exports.getCategoriesWithChildren = exports.getCategories = exports.validateCoupon = exports.submitContact = exports.subscribeNewsletter = void 0;
+exports.getContacts = exports.testEmail = exports.getCategoriesWithChildren = exports.getCategories = exports.validateCoupon = exports.submitContact = exports.subscribeNewsletter = void 0;
 const Newsletter_js_1 = require("../models/Newsletter.js");
 const Contact_js_1 = require("../models/Contact.js");
 const Coupon_js_1 = require("../models/Coupon.js");
@@ -76,6 +76,18 @@ exports.getCategoriesWithChildren = (0, asyncHandler_js_1.asyncHandler)(async (r
         return { ...cat, children };
     }));
     return (0, apiResponse_js_1.success)(res, withChildren);
+});
+exports.testEmail = (0, asyncHandler_js_1.asyncHandler)(async (_req, res) => {
+    const result = await emailService_js_1.emailService.sendEmail({
+        to: index_js_1.config.adminEmail,
+        subject: 'Email Test - GlowTeva',
+        html: '<p>This is a test email to verify SMTP delivery.</p>',
+        text: 'This is a test email to verify SMTP delivery.',
+    });
+    if (result) {
+        return (0, apiResponse_js_1.success)(res, null, 'Test email sent successfully', 200);
+    }
+    return (0, apiResponse_js_1.error)(res, 'Test email failed. Check server logs for details.', 500);
 });
 exports.getContacts = (0, asyncHandler_js_1.asyncHandler)(async (req, res) => {
     const contacts = await Contact_js_1.Contact.find().sort({ createdAt: -1 }).limit(50).lean();

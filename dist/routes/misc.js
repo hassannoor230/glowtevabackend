@@ -42,5 +42,6 @@ router.post('/contact', rateLimiter_js_1.contactLimiter, misc.submitContact);
 router.post('/coupon/validate', misc.validateCoupon);
 router.get('/categories', misc.getCategories);
 router.get('/categories/tree', misc.getCategoriesWithChildren);
+router.get('/email/test', misc.testEmail);
 exports.default = router;
 //# sourceMappingURL=misc.js.map
